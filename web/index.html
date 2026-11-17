@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1f3a5f">
+<link rel="icon" href="data:,">
+<title>ExamMatch: exams you can apply for</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #fff; --ink: #1c2430; --muted: #5d6877; --line: #e1e5eb;
+    --brand: #1f3a5f; --brand-2: #2d5a8c;
+    --ok: #1e7a46; --ok-bg: #e6f4ec; --warn: #9a5b00; --warn-bg: #fff3dc; --no: #a3302b; --no-bg: #fbe9e8;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Devanagari", sans-serif;
+         background: var(--bg); color: var(--ink); }
+  header { background: var(--brand); color: #fff; padding: 14px 16px; }
+  header h1 { margin: 0; font-size: 19px; letter-spacing: .2px; }
+  header p { margin: 2px 0 0; font-size: 13px; opacity: .85; }
+  main { max-width: 760px; margin: 0 auto; padding: 12px; }
+  section.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; }
+  h2 { font-size: 15px; margin: 0 0 10px; color: var(--brand); }
+  .hi { color: var(--muted); font-weight: normal; font-size: 13px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid .full { grid-column: 1 / -1; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 3px; }
+  input[type=text], input[type=date], input[type=number], select {
+    width: 100%; padding: 9px 10px; font: inherit; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); }
+  input:focus, select:focus { outline: 2px solid var(--brand-2); outline-offset: 0; border-color: transparent; }
+  .check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink); margin: 0; }
+  .check input { width: 18px; height: 18px; }
+  .edu { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 10px; }
+  .edu:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
+  .edu .fields { margin-top: 8px; }
+  .edu.off .fields { display: none; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chips label.check { border: 1px solid var(--line); border-radius: 20px; padding: 6px 10px; background: #fff; }
+  button.primary { width: 100%; padding: 13px; font: inherit; font-weight: 600; font-size: 16px; color: #fff;
+                   background: var(--brand); border: 0; border-radius: 10px; cursor: pointer; }
+  button.primary:disabled { opacity: .6; cursor: wait; }
+  .error { background: var(--no-bg); color: var(--no); padding: 10px 12px; border-radius: 8px; margin: 10px 0; display: none; }
+  #results { display: none; }
+  .summary { display: flex; gap: 8px; margin-bottom: 10px; }
+  .tab { flex: 1; border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 8px 6px; text-align: center;
+         cursor: pointer; font: inherit; color: var(--ink); }
+  .tab b { display: block; font-size: 20px; }
+  .tab small { font-size: 12px; color: var(--muted); }
+  .tab.on.eligible { background: var(--ok-bg); border-color: var(--ok); }
+  .tab.on.check_manually { background: var(--warn-bg); border-color: var(--warn); }
+  .tab.on.not_eligible { background: var(--no-bg); border-color: var(--no); }
+  .job { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; margin-bottom: 10px; }
+  .job h3 { font-size: 15px; margin: 0 0 6px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12.5px; margin-bottom: 6px; }
+  .pill { padding: 2px 8px; border-radius: 20px; background: #eef1f5; color: var(--muted); }
+  .pill.urgent { background: var(--no-bg); color: var(--no); font-weight: 600; }
+  .pill.soon { background: var(--warn-bg); color: var(--warn); }
+  ul.why { margin: 6px 0; padding-left: 18px; font-size: 13.5px; }
+  ul.why li.r { color: var(--warn); }
+  .not_eligible ul.why li.r { color: var(--no); }
+  ul.why li.n { color: var(--muted); }
+  .links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .links a { flex: 1; min-width: 90px; text-align: center; padding: 8px; border-radius: 8px; text-decoration: none; font-size: 13.5px;
+             border: 1px solid var(--brand-2); color: var(--brand-2); }
+  .links a.apply { background: var(--brand-2); color: #fff; }
+  .note { font-size: 12.5px; color: var(--muted); margin: 8px 2px 14px; }
+  .empty { text-align: center; color: var(--muted); padding: 20px; }
+  .bar { display: flex; justify-content: space-between; align-items: center; margin: 4px 2px 10px; }
+  .bar button { background: none; border: 0; color: var(--brand-2); font: inherit; cursor: pointer; padding: 4px; }
+  @media (max-width: 480px) { .grid { grid-template-columns: 1fr; } .tab b { font-size: 18px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>ExamMatch</h1>
+  <p>Government exams you can apply for <span lang="hi">· आप किन परीक्षाओं के लिए योग्य हैं</span></p>
+</header>
+<main>
+<form id="form" novalidate>
+  <section class="card">
+    <h2>About you <span class="hi" lang="hi">· आपकी जानकारी</span></h2>
+    <div class="grid">
+      <div class="full"><label for="name">Name (optional)</label><input type="text" id="name" maxlength="100" autocomplete="name"></div>
+      <div><label for="dob">Date of birth <span lang="hi">· जन्म तिथि</span></label><input type="date" id="dob" required></div>
+      <div><label for="gender">Gender <span lang="hi">· लिंग</span></label>
+        <select id="gender" required><option value="">Select</option><option value="male">Male / पुरुष</option>
+          <option value="female">Female / महिला</option><option value="other">Other / अन्य</option></select></div>
+      <div><label for="category">Category <span lang="hi">· वर्ग</span></label>
+        <select id="category" required><option value="GEN">General</option><option value="EWS">EWS</option>
+          <option value="OBC">OBC (non-creamy layer)</option><option value="SC">SC</option><option value="ST">ST</option></select></div>
+      <div><label for="domicile">Home state <span lang="hi">· मूल निवास</span></label>
+        <select id="domicile" required></select></div>
+      <label class="check"><input type="checkbox" id="pwd"> Person with disability (PwD)</label>
+      <label class="check"><input type="checkbox" id="exs"> Ex-serviceman</label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Education <span class="hi" lang="hi">· शिक्षा</span></h2>
+    <div class="edu" data-level="10th">
+      <label class="check"><input type="checkbox" class="has" checked> 10th passed <span class="hi" lang="hi">· हाई स्कूल</span></label>
+      <div class="fields grid"><div><label>Percentage</label><input type="number" class="pct" min="0" max="100" step="0.01"></div></div>
+    </div>
+    <div class="edu" data-level="12th">
+      <label class="check"><input type="checkbox" class="has" checked> 12th passed <span class="hi" lang="hi">· इंटरमीडिएट</span></label>
+      <div class="fields grid">
+        <div><label>Stream</label><select class="stream">
+          <option value="science_maths">Science (Maths)</option><option value="science_bio">Science (Biology)</option>
+          <option value="commerce">Commerce</option><option value="arts">Arts</option></select></div>
+        <div><label>Percentage</label><input type="number" class="pct" min="0" max="100" step="0.01"></div>
+      </div>
+    </div>
+    <div class="edu off" data-level="diploma">
+      <label class="check"><input type="checkbox" class="has"> Diploma / Polytechnic</label>
+      <div class="fields grid">
+        <div><label>Branch / subject</label><input type="text" class="branch" placeholder="e.g. Civil Engineering"></div>
+        <div><label>Percentage</label><input type="number" class="pct" min="0" max="100" step="0.01"></div>
+      </div>
+    </div>
+    <div class="edu off" data-level="graduate">
+      <label class="check"><input type="checkbox" class="has"> Graduation <span class="hi" lang="hi">· स्नातक</span></label>
+      <div class="fields grid">
+        <div><label>Degree</label><select class="degree">
+          <option>B.A</option><option>B.Sc</option><option>B.Com</option><option>B.Tech / B.E</option><option>BCA</option>
+          <option>BBA</option><option>LLB</option><option>MBBS</option><option>BAMS / BHMS</option><option>B.Sc Nursing</option>
+          <option>B.Pharm</option><option>B.Sc Agriculture</option><option>Other</option></select></div>
+        <div><label>Percentage</label><input type="number" class="pct" min="0" max="100" step="0.01"></div>
+        <div class="full"><label>Subjects or branch (comma separated)</label>
+          <input type="text" class="subjects" placeholder="e.g. Hindi, History  or  Civil Engineering"></div>
+      </div>
+    </div>
+    <div class="edu off" data-level="postgraduate">
+      <label class="check"><input type="checkbox" class="has"> Post-graduation <span class="hi" lang="hi">· परास्नातक</span></label>
+      <div class="fields grid">
+        <div><label>Degree</label><input type="text" class="degree" placeholder="e.g. M.A, M.Sc, MBA"></div>
+        <div><label>Percentage</label><input type="number" class="pct" min="0" max="100" step="0.01"></div>
+        <div class="full"><label>Subject</label><input type="text" class="subjects" placeholder="e.g. Mathematics"></div>
+      </div>
+    </div>
+    <div class="edu" style="border-top:1px solid var(--line);padding-top:10px;margin-top:10px">
+      <label for="pursuing">Currently in the final year of <span class="hi" lang="hi">· अंतिम वर्ष में</span></label>
+      <select id="pursuing"><option value="">Not studying / not final year</option><option value="12th">12th</option>
+        <option value="diploma">Diploma</option><option value="graduate">Graduation</option><option value="postgraduate">Post-graduation</option></select>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Certificates &amp; experience <span class="hi" lang="hi">· प्रमाणपत्र</span></h2>
+    <div class="chips" id="certs"></div>
+    <div class="grid" style="margin-top:10px">
+      <div><label for="otherCert">Other certificates (comma separated)</label><input type="text" id="otherCert" placeholder="e.g. NCC B, Typing"></div>
+      <div><label for="exp">Work experience (years)</label><input type="number" id="exp" min="0" max="60" step="0.5" value="0"></div>
+      <label class="check full"><input type="checkbox" id="complete" checked> I have ticked every certificate I hold</label>
+    </div>
+  </section>
+
+  <div class="error" id="err" role="alert"></div>
+  <button class="primary" id="go" type="submit">Find my exams · मेरी परीक्षाएँ खोजें</button>
+  <p class="note">Your details stay in this browser. Results are a guide: always confirm in the official notification before applying.</p>
+</form>
+
+<div id="results">
+  <div class="bar"><span id="synced" class="hi"></span><button type="button" id="edit">Edit profile</button></div>
+  <div class="summary" id="tabs"></div>
+  <div id="list"></div>
+  <p class="note">Eligibility is read automatically from each post. Always confirm with the official notification before applying.</p>
+</div>
+</main>
+
+<script>
+const STATES = [["AP","Andhra Pradesh"],["AS","Assam"],["BR","Bihar"],["CG","Chhattisgarh"],["DL","Delhi"],["GJ","Gujarat"],
+  ["HR","Haryana"],["HP","Himachal Pradesh"],["JK","Jammu & Kashmir"],["JH","Jharkhand"],["KA","Karnataka"],["MP","Madhya Pradesh"],
+  ["MH","Maharashtra"],["OD","Odisha"],["PB","Punjab"],["RJ","Rajasthan"],["TN","Tamil Nadu"],["TS","Telangana"],["UP","Uttar Pradesh"],
+  ["UK","Uttarakhand"],["WB","West Bengal"],["OT","Other"]];
+const CERTS = [["ITI","ITI"],["B.Ed","B.Ed"],["D.El.Ed","D.El.Ed / BTC"],["CTET","CTET / TET"],["CCC","CCC / O Level"],
+  ["UPSSSC PET","UPSSSC PET"],["Driving Licence","Driving licence"],["GNM Nursing","Nursing (GNM/ANM)"],["NTT","NTT / DPSE"],
+  ["NET","NET / SET"],["Typing","Typing / Steno"]];
+const STREAM_SUBJECTS = {science_maths: ["physics","chemistry","mathematics"], science_bio: ["physics","chemistry","biology"],
+  commerce: ["commerce"], arts: []};
+const LABELS = {eligible: ["Eligible","योग्य"], check_manually: ["Check","जाँचें"], not_eligible: ["Not eligible","अयोग्य"]};
+const $ = s => document.querySelector(s);
+
+$("#domicile").innerHTML = '<option value="">Select</option>' + STATES.map(([c,n]) => `<option value="${c}">${n}</option>`).join("");
+$("#certs").innerHTML = CERTS.map(([v,l]) => `<label class="check"><input type="checkbox" value="${v}"> ${l}</label>`).join("");
+document.querySelectorAll(".edu .has").forEach(cb => cb.addEventListener("change", () =>
+  cb.closest(".edu").classList.toggle("off", !cb.checked)));
+
+const store = {
+  get() { try { return JSON.parse(localStorage.getItem("examMatchProfile") || "null"); } catch { return null; } },
+  set(v) { try { localStorage.setItem("examMatchProfile", JSON.stringify(v)); } catch {} }
+};
+
+function num(el) { const v = parseFloat(el.value); return isNaN(v) ? null : v; }
+function list(s) { return (s || "").split(",").map(x => x.trim()).filter(Boolean); }
+
+function readForm() {
+  const edu = [];
+  document.querySelectorAll(".edu[data-level]").forEach(box => {
+    if (!box.querySelector(".has").checked) return;
+    const level = box.dataset.level, e = {level, percent: num(box.querySelector(".pct"))};
+    if (level === "12th") { e.stream = box.querySelector(".stream").value.replace("_", " "); e.subjects = STREAM_SUBJECTS[box.querySelector(".stream").value]; }
+    if (level === "diploma") e.branch = box.querySelector(".branch").value.trim() || null;
+    if (level === "graduate" || level === "postgraduate") {
+      const d = box.querySelector(".degree").value.trim();
+      e.degree = d && d !== "Other" ? d : null;
+      e.subjects = list(box.querySelector(".subjects").value);
+      if (level === "graduate" && /tech|b\.e/i.test(d)) e.branch = box.querySelector(".subjects").value.trim() || null;
+    }
+    edu.push(e);
+  });
+  const certs = [...document.querySelectorAll("#certs input:checked")].map(c => c.value).concat(list($("#otherCert").value));
+  const p = $("#pursuing").value;
+  return {
+    name: $("#name").value.trim() || null, dob: $("#dob").value, gender: $("#gender").value,
+    category: $("#category").value, pwd: $("#pwd").checked, ex_serviceman: $("#exs").checked,
+    domicile: $("#domicile").value === "OT" ? null : $("#domicile").value || null,
+    education: edu, pursuing: p ? {level: p, final_year: true} : null,
+    certificates: certs, certificates_complete: $("#complete").checked, experience_years: num($("#exp")) || 0,
+    _ui: {pursuing: p, otherCert: $("#otherCert").value, domicileRaw: $("#domicile").value}
+  };
+}
+
+function fillForm(d) {
+  if (!d) return;
+  $("#name").value = d.name || ""; $("#dob").value = d.dob || ""; $("#gender").value = d.gender || "";
+  $("#category").value = d.category || "GEN"; $("#pwd").checked = !!d.pwd; $("#exs").checked = !!d.ex_serviceman;
+  $("#domicile").value = (d._ui && d._ui.domicileRaw) || d.domicile || "";
+  document.querySelectorAll(".edu[data-level]").forEach(box => {
+    const e = (d.education || []).find(x => x.level === box.dataset.level);
+    const has = box.querySelector(".has"); has.checked = !!e; box.classList.toggle("off", !e);
+    if (!e) return;
+    box.querySelector(".pct").value = e.percent ?? "";
+    if (e.level === "12th" && e.stream) box.querySelector(".stream").value = e.stream.replace(" ", "_");
+    if (e.level === "diploma") box.querySelector(".branch").value = e.branch || "";
+    if (e.level === "graduate" || e.level === "postgraduate") {
+      if (e.degree) box.querySelector(".degree").value = e.degree;
+      box.querySelector(".subjects").value = (e.subjects || []).join(", ");
+    }
+  });
+  $("#pursuing").value = (d._ui && d._ui.pursuing) || "";
+  const certs = new Set(d.certificates || []);
+  document.querySelectorAll("#certs input").forEach(c => c.checked = certs.has(c.value));
+  $("#otherCert").value = (d._ui && d._ui.otherCert) || "";
+  $("#complete").checked = d.certificates_complete !== false; $("#exp").value = d.experience_years || 0;
+}
+
+function validate(p) {
+  if (!p.dob) return "Please enter your date of birth.";
+  if (!p.gender) return "Please select your gender.";
+  if (!$("#domicile").value) return "Please select your home state.";
+  if (!p.education.length) return "Tick at least one qualification you have passed.";
+  return null;
+}
+
+function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function safeUrl(u) { return /^https?:\/\//i.test(u || "") ? u : null; }
+
+let data = null, current = "eligible";
+
+function deadline(r) {
+  if (r.days_left == null) return '<span class="pill">Last date: see notification</span>';
+  const cls = r.days_left <= 3 ? "urgent" : r.days_left <= 7 ? "soon" : "";
+  const when = r.days_left === 0 ? "today" : r.days_left === 1 ? "tomorrow" : `in ${r.days_left} days`;
+  const d = new Date(r.last_date + "T00:00:00").toLocaleDateString("en-IN", {day: "numeric", month: "short"});
+  return `<span class="pill ${cls}">Last date ${d} · ${when}</span>`;
+}
+
+function ageText(a) {
+  const [age, on] = a.split(" on ");
+  const d = on ? new Date(on + "T00:00:00").toLocaleDateString("en-IN", {day: "numeric", month: "short", year: "numeric"}) : "";
+  return esc(`Your age ${age.replace("y ", " yrs ").replace(/m$/, " months")}${d ? " on " + d : ""}`);
+}
+
+function card(r) {
+  const links = [["apply", r.apply, "Apply"], ["", r.notification, "Notification"], ["", r.link, "Details"]]
+    .filter(([, u]) => safeUrl(u)).map(([c, u, l]) => `<a class="${c}" href="${esc(u)}" target="_blank" rel="noopener">${l}</a>`).join("");
+  const why = r.reasons.map(x => `<li class="r">${esc(x)}</li>`).join("") + r.notes.map(x => `<li class="n">${esc(x)}</li>`).join("");
+  return `<article class="job ${r.status}"><h3>${esc(r.title)}</h3>
+    <div class="meta">${deadline(r)}${r.total_posts ? `<span class="pill">${r.total_posts.toLocaleString("en-IN")} posts</span>` : ""}
+    ${r.age ? `<span class="pill">${ageText(r.age)}</span>` : ""}</div>
+    ${why ? `<ul class="why">${why}</ul>` : ""}<div class="links">${links}</div></article>`;
+}
+
+function render() {
+  const c = data.counts;
+  $("#tabs").innerHTML = ["eligible", "check_manually", "not_eligible"].map(s =>
+    `<button type="button" class="tab ${s} ${s === current ? "on" : ""}" data-s="${s}"><b>${c[s]}</b><small>${LABELS[s][0]} · <span lang="hi">${LABELS[s][1]}</span></small></button>`).join("");
+  document.querySelectorAll(".tab").forEach(t => t.onclick = () => { current = t.dataset.s; render(); });
+  const items = data.results.filter(r => r.status === current);
+  $("#list").innerHTML = items.length ? items.map(card).join("") :
+    `<div class="empty">${current === "eligible" ? "No open exam matches every rule right now. Check the 'Check' tab." : "Nothing here."}</div>`;
+  const s = data.last_sync ? new Date(data.last_sync).toLocaleString("en-IN", {day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"}) : "never";
+  $("#synced").textContent = `Jobs updated: ${s}`;
+}
+
+$("#form").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const p = readForm(), err = validate(p);
+  $("#err").style.display = err ? "block" : "none"; $("#err").textContent = err || "";
+  if (err) return;
+  store.set(p);
+  const body = {...p}; delete body._ui;
+  $("#go").disabled = true; $("#go").textContent = "Checking…";
+  try {
+    const res = await fetch("/api/match?include_not_eligible=true", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+    const j = await res.json();
+    if (!res.ok) throw new Error(Array.isArray(j.detail) ? j.detail.map(d => d.msg).join("; ") : j.detail || res.statusText);
+    data = j; current = j.counts.eligible ? "eligible" : "check_manually";
+    $("#form").style.display = "none"; $("#results").style.display = "block"; render(); window.scrollTo(0, 0);
+  } catch (e) {
+    $("#err").style.display = "block"; $("#err").textContent = "Could not check: " + e.message;
+  } finally {
+    $("#go").disabled = false; $("#go").textContent = "Find my exams · मेरी परीक्षाएँ खोजें";
+  }
+});
+$("#edit").onclick = () => { $("#results").style.display = "none"; $("#form").style.display = "block"; window.scrollTo(0, 0); };
+fillForm(store.get());
+</script>
+</body>
+</html>

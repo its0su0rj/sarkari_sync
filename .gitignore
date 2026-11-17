@@ -1,0 +1,22 @@
+# private working data (kept encrypted on the 'state' branch by state.py)
+sarkari.db
+sarkari.db-*
+bot_state.json
+.state_hash
+*.lock
+# generated
+site/jobs.json
+jobs.json
+all.json
+matches.json
+profile.json
+*.log
+__pycache__/
+.venv/
+Claude outputs/
+# copies made for manual upload (not needed when publishing from VS Code)
+upload_to_github/
+github_workflows/
+
+# filesystem temp leftovers
+.fuse_hidden*

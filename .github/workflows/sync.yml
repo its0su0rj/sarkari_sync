@@ -1,0 +1,85 @@
+name: Sync jobs and publish site
+
+on:
+  schedule:
+    - cron: "37 20 */2 * *"        # every 2 days at about 02:07 IST
+  workflow_dispatch:               # "Run workflow" button
+  push:
+    branches: [main]
+    paths-ignore: ["**.md", "status/**"]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: exammatch-state           # never run at the same time as the bot (they share data)
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    env:
+      TZ: Asia/Kolkata
+      STATE_PASSWORD: ${{ secrets.STATE_PASSWORD }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TELEGRAM_BOT_USERNAME: ${{ vars.TELEGRAM_BOT_USERNAME }}
+      SR_USER_AGENT: ${{ vars.SR_USER_AGENT || 'ExamMatchBot/1.0' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: pip install -r requirements.txt
+
+      - name: Restore data
+        run: python state.py pull
+
+      - name: Sync from sarkariresult.com
+        id: sync
+        if: github.event_name != 'push'
+        continue-on-error: true
+        run: python sync.py
+
+      - name: Tests (rules, bot, and Python/JavaScript agreement on today's jobs)
+        run: python -m unittest discover -s tests
+
+      - name: Build site
+        run: python build_site.py
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+      - name: Save data
+        if: always() && steps.sync.outcome != 'skipped'
+        run: python state.py push
+
+      - name: Record status (also keeps the scheduled runs active)
+        if: always() && steps.sync.outcome != 'skipped'
+        run: |
+          mkdir -p status
+          python sync.py --status > status/last_run.txt || true
+          git config user.name "exammatch-bot"
+          git config user.email "exammatch-bot@users.noreply.github.com"
+          git add status/last_run.txt
+          git commit -q -m "status: $(date +'%d %b %Y %H:%M')" || exit 0
+          git push -q || true
+
+      - name: Report a sync problem
+        if: steps.sync.outcome == 'failure'
+        run: |
+          echo "::error::Sync did not finish. The website still shows the previous data. Open the 'Sync from sarkariresult.com' step to see why (a 403 means the site is blocking GitHub's servers)."
+          exit 1
