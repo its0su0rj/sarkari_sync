@@ -1,0 +1,9 @@
+last success : never
+paused until : 2026-11-18T18:31:13.492531+00:00
+
+posts by kind / review status:
+
+job pages not yet parsed: 0
+
+last 5 runs:
+   2026-11-17T18:31:13+00:00 | api | 1 | 0 | 0 | 0 | blocked | https://www.sarkariresult.com/wp-json/wp/v2/categories answered HTTP 403
