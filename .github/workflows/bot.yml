@@ -38,12 +38,14 @@ jobs:
       - name: Website address
         run: echo "SITE_URL=https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/" >> "$GITHUB_ENV"
       - name: Restore data
-        run: python state.py pull
+        run: |
+          python state.py pull jobsdb sarkari.db
+          python state.py pull state bot_state.json
       - name: Answer messages
         run: python bot.py poll
       - name: Send alerts
         if: github.event.schedule == '47 2 * * *' || inputs.alerts
         run: python bot.py alerts
-      - name: Save data
+      - name: Save subscribers
         if: always()
-        run: python state.py push
+        run: python state.py push state bot_state.json

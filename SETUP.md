@@ -65,11 +65,27 @@ Time needed: about 15 minutes, plus a 30–40 minute wait for the first update.
 
 ---
 
+## Sync from your PC (needed: sarkariresult.com blocks GitHub's servers)
+
+The website, bot and alerts run on GitHub, but the fetching of new exams runs on your PC:
+
+1. Keep the password file `Documents\exammatch_STATE_PASSWORD.txt` on your PC (the PC needs it to
+   encrypt the upload). Also keep a copy in a safe note.
+2. Double-click **`pc_sync.bat`** once. It fetches new exams, uploads them (encrypted) to GitHub and
+   starts the website rebuild. It says *Done* at the end.
+3. Double-click **`schedule_sync.bat`** and choose how often: every 6 or 12 hours, once a day,
+   every 2 days, or your own number of hours or days. Run it again any time to change or stop it.
+   If the PC is off at the chosen time, it runs as soon as the PC is on again.
+
+If the PC is off for days, the website simply shows the last data until it is on again.
+Log: `pc_sync.log` in the folder.
+
 ## What runs by itself
 
 | When | What |
 |---|---|
-| Every 2 days, about 2 AM | Fetch new and changed posts, run all tests, publish the website |
+| As often as you chose (your PC) | Fetch new and changed posts, upload them, start the website rebuild |
+| After each upload, and every 2 days | Run all tests, publish the website |
 | Every hour | The bot reads and answers messages |
 | Every day, about 8 AM | Alerts: new eligible exams, and reminders 3 days before last dates |
 
@@ -78,9 +94,7 @@ repositories.
 
 ## If something goes wrong
 
-- **The sync step fails with 403 or "blocked"**: sarkariresult.com may block GitHub's servers.
-  The website keeps showing the last data. Tell me and I'll switch the sync to your own PC
-  (it worked from there) with automatic upload.
+- **pc_sync.bat says "not logged in"**: run `gh auth login` again in a terminal.
 - **"cannot decrypt"**: the `STATE_PASSWORD` secret was changed. Put back the original.
 - **Scheduled runs stopped**: GitHub pauses schedules on repositories with no activity for 60 days.
   The workflow commits a small status file every run to prevent this. If it happens anyway:

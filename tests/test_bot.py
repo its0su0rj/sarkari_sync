@@ -185,22 +185,33 @@ class StateTests(unittest.TestCase):
             script = os.path.join(os.path.dirname(__file__), "..", "state.py")
             run = lambda *a, **kw: subprocess.run([sys.executable, script, *a], cwd=work, env=kw.get("env", env),
                                                   capture_output=True, text=True)
-            self.assertIn("no 'state' branch", run("pull").stdout)
+            self.assertIn("no 'state' branch", run("pull", "state", "bot_state.json").stdout)
             with open(os.path.join(work, "bot_state.json"), "w") as fh:
                 fh.write('{"subscribers": {"1": {"profile": {"dob": "2001-01-01"}}}}')
-            self.assertEqual(run("push").returncode, 0)
-            run("push")
-            # remote holds one commit and the file is not readable
+            self.assertEqual(run("push", "state", "bot_state.json").returncode, 0)
+            self.assertIn("no changes", run("push", "state", "bot_state.json").stdout)
+            # a database on its own branch never touches the subscribers
+            import sqlite3
+            db = sqlite3.connect(os.path.join(work, "sarkari.db"))
+            db.execute("CREATE TABLE t(x)"); db.execute("INSERT INTO t VALUES (42)"); db.commit(); db.close()
+            self.assertEqual(run("push", "jobsdb", "sarkari.db").returncode, 0)
+            files = subprocess.run(["git", "--git-dir", remote, "ls-tree", "--name-only", "state"],
+                                   capture_output=True, text=True).stdout.split()
+            self.assertEqual(sorted(files), ["README.md", "bot_state.json.enc"])
+            # one commit per branch, contents unreadable
             log = subprocess.run(["git", "--git-dir", remote, "log", "--oneline", "state"], capture_output=True, text=True)
             self.assertEqual(len(log.stdout.strip().splitlines()), 1)
             blob = subprocess.run(["git", "--git-dir", remote, "show", "state:bot_state.json.enc"],
                                   capture_output=True, text=True).stdout
             self.assertNotIn("2001-01-01", blob)
             os.remove(os.path.join(work, "bot_state.json"))
-            self.assertEqual(run("pull").returncode, 0)
+            os.remove(os.path.join(work, "sarkari.db"))
+            self.assertEqual(run("pull", "state", "bot_state.json").returncode, 0)
             self.assertIn("2001-01-01", open(os.path.join(work, "bot_state.json")).read())
+            self.assertEqual(run("pull", "jobsdb", "sarkari.db").returncode, 0)
+            self.assertEqual(sqlite3.connect(os.path.join(work, "sarkari.db")).execute("SELECT x FROM t").fetchone(), (42,))
             wrong = dict(env, STATE_PASSWORD="y" * 32)
-            r = run("pull", env=wrong)
+            r = run("pull", "state", "bot_state.json", env=wrong)
             self.assertNotEqual(r.returncode, 0)
             self.assertIn("cannot decrypt", r.stderr + r.stdout)
 

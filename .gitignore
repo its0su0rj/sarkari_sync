@@ -2,7 +2,7 @@
 sarkari.db
 sarkari.db-*
 bot_state.json
-.state_hash
+.state_hash*
 *.lock
 # generated
 site/jobs.json
@@ -18,5 +18,4 @@ Claude outputs/
 upload_to_github/
 github_workflows/
 
-# filesystem temp leftovers
 .fuse_hidden*

@@ -41,12 +41,15 @@ jobs:
           node-version: "22"
       - run: pip install -r requirements.txt
 
-      - name: Restore data
-        run: python state.py pull
+      - name: Restore job data
+        run: python state.py pull jobsdb sarkari.db
 
+      # sarkariresult.com blocks GitHub's servers, so by default the sync runs on your PC
+      # (pc_sync.bat), which uploads the data and starts this workflow to publish it.
+      # Set the repository variable SYNC_SOURCE to "github" to sync here instead.
       - name: Sync from sarkariresult.com
         id: sync
-        if: github.event_name != 'push'
+        if: github.event_name != 'push' && vars.SYNC_SOURCE == 'github'
         continue-on-error: true
         run: python sync.py
 
@@ -63,12 +66,12 @@ jobs:
       - id: deploy
         uses: actions/deploy-pages@v4
 
-      - name: Save data
+      - name: Save job data
         if: always() && steps.sync.outcome != 'skipped'
-        run: python state.py push
+        run: python state.py push jobsdb sarkari.db
 
       - name: Record status (also keeps the scheduled runs active)
-        if: always() && steps.sync.outcome != 'skipped'
+        if: always() && github.event_name != 'push'
         run: |
           mkdir -p status
           python sync.py --status > status/last_run.txt || true
