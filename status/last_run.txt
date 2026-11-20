@@ -1,19 +1,20 @@
-last success : 2026-11-19T05:21:22.700500+00:00
+last success : 2026-11-20T16:54:34.950300+00:00
 paused until : -
 
 posts by kind / review status:
-  admission    new       7
+  admission    new       8
   admit_card   new       83
   answer_key   new       40
   certificate  new       8
-  job          new       261
-  other        new       33
-  result       new       119
-  syllabus     new       1
+  job          new       264
+  other        new       35
+  result       new       120
+  syllabus     new       2
 
 job pages not yet parsed: 0
 
 last 5 runs:
+   2026-11-20T16:54:34+00:00 | api | 7 | 8 | 16 | 5 | ok | 
    2026-11-19T05:21:22+00:00 | api | 12 | 4 | 20 | 10 | ok | 
    2026-11-17T18:42:49+00:00 | api | 7 | 4 | 9 | 5 | ok | 
    2026-11-17T11:38:59+00:00 | api | 259 | 0 | 23 | 257 | ok | 
