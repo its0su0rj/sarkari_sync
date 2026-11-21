@@ -12,7 +12,7 @@ import os
 import sqlite3
 from datetime import date, timedelta
 
-from eligibility import load_jobs
+from eligibility import load_jobs, parse_requirements, requirements_to_json
 
 KEEP = ("link", "title", "categories", "dates", "date_notes", "age", "fees", "total_posts",
         "qualification_text", "links")
@@ -27,7 +27,9 @@ def build(db_path: str, out_dir: str) -> int:
         last = (j.get("dates") or {}).get("last_date")
         if last and last < cutoff:
             continue
-        public.append({k: j.get(k) for k in KEEP})
+        pub = {k: j.get(k) for k in KEEP}
+        pub["req"] = requirements_to_json(parse_requirements(j))     # rules parsed once, here
+        public.append(pub)
     public.sort(key=lambda j: ((j.get("dates") or {}).get("last_date") or "9999", j["title"]))
     db = sqlite3.connect(db_path)
     row = db.execute("SELECT value FROM meta WHERE key='last_success'").fetchone()

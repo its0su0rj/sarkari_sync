@@ -145,12 +145,16 @@
   }
 
   // ======================================================================= requirements
+  // compiled once (building a RegExp on every call was most of the matching time)
+  const SUBJECT_RX = SUBJECTS.map(s => [s, new RegExp(`\\b${escapeRx(s)}\\b`)]);
+  const ALIAS_RX = Object.entries(SUBJ_ALIASES).filter(([a]) => a.length > 3)
+    .map(([a, s]) => [s, new RegExp(`\\b${escapeRx(a)}\\b`)]);
+  const BRANCH_RX = ["civil", "mechanical", "electrical", "electronics", "computer"].map(b => [b, new RegExp(`\\b${b}\\b`, "i")]);
   function subjectsIn(text) {
     const low = text.toLowerCase();
-    const found = new Set(SUBJECTS.filter(s => new RegExp(`\\b${escapeRx(s)}\\b`).test(low)));
-    for (const [alias, s] of Object.entries(SUBJ_ALIASES)) {
-      if (alias.length > 3 && new RegExp(`\\b${escapeRx(alias)}\\b`).test(low)) found.add(s);
-    }
+    const found = new Set();
+    for (const [s, rx] of SUBJECT_RX) if (rx.test(low)) found.add(s);
+    for (const [s, rx] of ALIAS_RX) if (rx.test(low)) found.add(s);
     return found;
   }
   function levelOf(text) { for (const [lvl, rx] of LEVEL_RX) if (rx.test(text)) return lvl; return null; }
@@ -216,7 +220,7 @@
     let state = null;
     if (!CENTRAL_HINT.test(ttl)) for (const [code, rx] of STATES) if (rx.test(textAll)) { state = code; break; }
     const rules = TITLE_RULES.filter(([rx]) => rx.test(ttl)).map(([, k, v, why]) => [k, v, why]);
-    const branch = ["civil", "mechanical", "electrical", "electronics", "computer"].find(b => new RegExp(`\\b${b}\\b`, "i").test(ttl)) || null;
+    const branch = (BRANCH_RX.find(([, rx]) => rx.test(ttl)) || [null])[0];
     const tt = inter(common, TEACHER_TRAINING);
     const teacherTraining = tt.size > 1;
     if (teacherTraining) common = minus(common, TEACHER_TRAINING);
@@ -227,6 +231,28 @@
       district_level: /\bdistrict\b|\bjila\b/i.test(ttl) || ttl.toLowerCase().includes("ecce educator"),
       marks_relaxation: /relaxation\s*in\s*(?:the\s*)?minimum\s*marks|marks\s*relaxation/i.test(full),
     };
+  }
+
+  // Rules pre-parsed by build_site.py (Python) and stored in jobs.json as "req".
+  const REQ_VERSION = 1;
+  function reqFromJSON(d) {
+    return {
+      options: d.options.map(o => ({ text: o.text, level: o.level, tags: new Set(o.tags), subjects: new Set(o.subjects),
+        min_percent: o.min_percent, appearing_ok: o.appearing_ok, any_stream: o.any_stream,
+        specific_degree: o.specific_degree, unknown_field: o.unknown_field })),
+      common_tags: new Set(d.common_tags), title_rules: d.title_rules, no_relaxation: d.no_relaxation, branch: d.branch,
+      teacher_training: d.teacher_training, experience_years: d.experience_years, state: d.state,
+      female_only: d.female_only, district_level: d.district_level, marks_relaxation: d.marks_relaxation,
+    };
+  }
+  const REQ_CACHE = new WeakMap();
+  function jobRequirements(job) {
+    let r = REQ_CACHE.get(job);
+    if (!r) {
+      r = (job.req && job.req.v === REQ_VERSION) ? reqFromJSON(job.req) : parseRequirements(job);
+      REQ_CACHE.set(job, r);
+    }
+    return r;
   }
 
   // ======================================================================= profile
@@ -363,7 +389,7 @@
 
   function check(profile, job, today) {
     today = today || todayISO();
-    const req = parseRequirements(job);
+    const req = jobRequirements(job);
     const fail = [], chk = [], notes = [];
     const dates = job.dates || {}, links = job.links || {};
     const last = dates.last_date;
@@ -443,7 +469,7 @@
     return out;
   }
 
-  const api = { LEVELS, loadProfile, parseRequirements, check, match, todayISO, ageOn };
+  const api = { LEVELS, loadProfile, parseRequirements, jobRequirements, check, match, todayISO, ageOn };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.ExamEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);

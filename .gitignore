@@ -19,3 +19,7 @@ upload_to_github/
 github_workflows/
 
 .fuse_hidden*
+
+node_modules/
+.wrangler/
+.dev.vars

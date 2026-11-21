@@ -258,6 +258,40 @@ _JUNK = re.compile(r"^step\s*\d|candidates?\s*will\s*have\s*to|how\s*to|read\s*t
                    r"^(?:graduate|diploma|trade)(?:\s*[,&]\s*(?:graduate|diploma|trade))+\s*apprentice", re.I)
 
 
+REQ_VERSION = 1
+
+
+def requirements_to_json(req: Requirements) -> dict:
+    """Pre-parsed rules, stored in jobs.json so phones and the bot skip the slow parsing step."""
+    return {
+        "v": REQ_VERSION,
+        "options": [{"text": o.text, "level": o.level, "tags": sorted(o.tags), "subjects": sorted(o.subjects),
+                     "min_percent": o.min_percent, "appearing_ok": o.appearing_ok, "any_stream": o.any_stream,
+                     "specific_degree": o.specific_degree, "unknown_field": o.unknown_field} for o in req.options],
+        "common_tags": sorted(req.common_tags), "experience_years": req.experience_years, "state": req.state,
+        "female_only": req.female_only, "district_level": req.district_level,
+        "marks_relaxation": req.marks_relaxation, "title_rules": [list(r) for r in req.title_rules],
+        "no_relaxation": req.no_relaxation, "branch": req.branch, "teacher_training": req.teacher_training,
+    }
+
+
+def requirements_from_json(d: dict) -> Requirements:
+    opts = [Option(text=o["text"], level=o["level"], tags=set(o["tags"]), subjects=set(o["subjects"]),
+                   min_percent=o["min_percent"], appearing_ok=o["appearing_ok"], any_stream=o["any_stream"],
+                   specific_degree=o["specific_degree"], unknown_field=o["unknown_field"]) for o in d["options"]]
+    return Requirements(options=opts, common_tags=set(d["common_tags"]), experience_years=d["experience_years"],
+                        state=d["state"], female_only=d["female_only"], district_level=d["district_level"],
+                        marks_relaxation=d["marks_relaxation"], title_rules=[tuple(r) for r in d["title_rules"]],
+                        no_relaxation=d["no_relaxation"], branch=d["branch"], teacher_training=d["teacher_training"])
+
+
+def job_requirements(job: dict) -> Requirements:
+    r = job.get("req")
+    if isinstance(r, dict) and r.get("v") == REQ_VERSION:
+        return requirements_from_json(r)
+    return parse_requirements(job)
+
+
 def parse_requirements(job: dict) -> Requirements:
     title = job.get("title") or ""
     lines = [q for q in (job.get("qualification_text") or []) if not _JUNK.search(q)]
@@ -513,7 +547,7 @@ def _option_result(p: Profile, o: Option, req: Requirements):
 
 def check(profile: Profile, job: dict, today: date | None = None) -> Result:
     today = today or date.today()
-    req = parse_requirements(job)
+    req = job_requirements(job)
     fail, check_, notes = [], [], []
     dates = job.get("dates") or {}
     links = job.get("links") or {}

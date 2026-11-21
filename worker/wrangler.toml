@@ -1,0 +1,20 @@
+# ExamMatch Telegram bot on Cloudflare Workers (free plan).
+name = "exammatch-bot"
+main = "src/index.mjs"
+compatibility_date = "2026-11-01"
+
+[vars]
+JOBS_URL = "https://its0su0rj.github.io/sarkari_sync/jobs.json"
+SITE_URL = "https://its0su0rj.github.io/sarkari_sync/"
+
+# Subscriber store. setup.ps1 creates it and fills in the id.
+[[kv_namespaces]]
+binding = "KV"
+id = "REPLACE_WITH_KV_ID"
+
+# Daily alerts: every minute from 02:00 to 03:59 UTC (07:30 to 09:29 IST), a few subscribers per run.
+[triggers]
+crons = ["* 2-3 * * *"]
+
+# Secrets (set with `wrangler secret put`, never in this file):
+#   TELEGRAM_BOT_TOKEN, WEBHOOK_SECRET, ADMIN_TOKEN

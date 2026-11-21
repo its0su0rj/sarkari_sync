@@ -6,7 +6,7 @@ jobs.json: an export from `sync.py --export file --kinds job` (any open/closed m
 import json, os, random, sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from datetime import date
-from eligibility import Profile, match
+from eligibility import Profile, match, parse_requirements, requirements_to_json
 
 EDU = {
     "10th": [{"level": "10th", "percent": 61}],
@@ -51,7 +51,9 @@ def profiles(n=60, seed=7):
 
 
 def main(src, dst):
-    jobs = [j for j in json.load(open(src, encoding="utf-8")) if j.get("kind", "job") == "job"]
+    data = json.load(open(src, encoding="utf-8"))
+    data = data["jobs"] if isinstance(data, dict) else data          # site/jobs.json or an export
+    jobs = [j for j in data if j.get("kind", "job") == "job"]
     keep = ("link", "title", "categories", "dates", "date_notes", "age", "fees", "total_posts",
             "qualification_text", "links")
     jobs = [{k: j.get(k) for k in keep} for j in jobs]
@@ -61,7 +63,8 @@ def main(src, dst):
         for p in profs:
             cases.append({"today": today, "profile": p,
                           "expected": match(Profile.load(p), jobs, date.fromisoformat(today))})
-    json.dump({"jobs": jobs, "cases": cases}, open(dst, "w", encoding="utf-8"), ensure_ascii=False)
+    reqs = [requirements_to_json(parse_requirements(j)) for j in jobs]
+    json.dump({"jobs": jobs, "reqs": reqs, "cases": cases}, open(dst, "w", encoding="utf-8"), ensure_ascii=False)
     print(f"{len(cases)} cases x {len(jobs)} jobs = {len(cases) * len(jobs)} checks -> {dst}")
 
 

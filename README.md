@@ -8,9 +8,9 @@
 | Eligibility engine | `eligibility.py` (Python) and `site/engine.js` (same rules in JavaScript) |
 | Website (static, runs in the browser) | `site/` built by `build_site.py` |
 | Local web page + API | `api.py`, `web/index.html` (`serve.bat`) |
-| Telegram bot and alerts | `bot.py` |
+| Telegram bot and alerts | `worker/` (Cloudflare Workers) |
 | Encrypted storage of working data | `state.py` |
-| Automation | `.github/workflows/sync.yml`, `.github/workflows/bot.yml` |
+| Automation | `.github/workflows/sync.yml` |
 
 **Rule changes go in both `eligibility.py` and `site/engine.js`.** `tests/test_parity.py` checks that both
 give identical results on every real job (needs Node.js; it runs automatically on GitHub).

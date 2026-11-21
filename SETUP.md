@@ -35,7 +35,6 @@ Time needed: about 15 minutes, plus a 30–40 minute wait for the first update.
      (typing `/` creates the folders).
    - Open `upload_to_github\github_workflows\sync.yml` in Notepad, **Ctrl+A**, **Ctrl+C**,
      paste into the big box on GitHub, click **Commit changes**.
-   - Do the same for `.github/workflows/bot.yml` with `github_workflows\bot.yml`.
 5. **Settings** → **Pages** → under "Build and deployment", set **Source** to **GitHub Actions**.
 6. **Settings** → **Secrets and variables** → **Actions**:
    - **Secrets** tab → **New repository secret**
@@ -60,14 +59,29 @@ Time needed: about 15 minutes, plus a 30–40 minute wait for the first update.
 2. Chrome may offer **Install ExamMatch**; or use the menu → **Add to Home screen**.
 3. In **Get alerts on Telegram**: tap **Open Telegram bot**, press **Start**, come back, tap
    **Copy my code**, paste it in the bot chat and send it.
-4. The bot answers within about an hour. To get the answer immediately: **Actions → Telegram bot →
-   Run workflow**.
+4. The bot answers within a few seconds (it runs on Cloudflare: see the next section).
 
 ---
 
+## Telegram bot on Cloudflare (free, instant replies)
+
+GitHub runs scheduled jobs late or skips them, so the bot runs on Cloudflare Workers instead
+(free plan, no card). One-time setup:
+
+1. Make a free account at **dash.cloudflare.com/sign-up** and verify the email.
+2. In the VS Code terminal, in the `sarkari_sync` folder, run:
+   `powershell -ExecutionPolicy Bypass -File worker\setup.ps1`
+3. It opens Cloudflare in the browser: click **Allow**. If it asks for a workers.dev name, type a
+   short one (e.g. `exammatch`). When asked, paste the bot token from BotFather (it stays hidden).
+4. It moves the existing subscribers over, connects Telegram, and prints **Done**.
+   The admin token is saved as `Documents\exammatch_ADMIN_TOKEN.txt`.
+
+Alerts run every day around 8 AM IST from Cloudflare. To change the bot code later, edit
+`worker/src/` and run `cd worker` then `npx wrangler deploy`.
+
 ## Sync from your PC (needed: sarkariresult.com blocks GitHub's servers)
 
-The website, bot and alerts run on GitHub, but the fetching of new exams runs on your PC:
+The website runs on GitHub and the bot on Cloudflare, but the fetching of new exams runs on your PC:
 
 1. Keep the password file `Documents\exammatch_STATE_PASSWORD.txt` on your PC (the PC needs it to
    encrypt the upload). Also keep a copy in a safe note.
@@ -86,8 +100,8 @@ Log: `pc_sync.log` in the folder.
 |---|---|
 | As often as you chose (your PC) | Fetch new and changed posts, upload them, start the website rebuild |
 | After each upload, and every 2 days | Run all tests, publish the website |
-| Every hour | The bot reads and answers messages |
-| Every day, about 8 AM | Alerts: new eligible exams, and reminders 3 days before last dates |
+| Instantly (Cloudflare) | The bot answers messages |
+| Every day, about 8 AM (Cloudflare) | Alerts: new eligible exams, and reminders 3 days before last dates |
 
 GitHub emails you if a run fails. Everything is free: Actions and Pages cost nothing for public
 repositories.
@@ -99,16 +113,14 @@ repositories.
 - **Scheduled runs stopped**: GitHub pauses schedules on repositories with no activity for 60 days.
   The workflow commits a small status file every run to prevent this. If it happens anyway:
   **Actions → the workflow → Enable workflow**.
-- **The bot doesn't answer**: check **Actions → Telegram bot** for errors, and that the token secret and
-  username variable are right.
+- **The bot doesn't answer**: in `worker`, run `npx wrangler tail` and send the bot a message to see
+  errors; run `setup.ps1` again if the token changed.
 
 ## Privacy
 
 - Student details are stored only in the student's own browser, and, if they sign up for alerts,
-  encrypted with your `STATE_PASSWORD` on the `state` branch of your repository. Nobody without the
-  password can read them.
-- The `state` branch is replaced on every run (no history is kept), and `/stop` deletes a student's
-  details at the next hourly run. The bot does not keep names.
+  in your private Cloudflare KV store (only your Cloudflare account can read it).
+- `/stop` deletes a student's details at once. The bot does not keep names.
 - The public website and `jobs.json` contain only facts and links (dates, ages, fees, links), not
   text copied from sarkariresult.com.
 
